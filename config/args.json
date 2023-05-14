@@ -1,0 +1,19 @@
+{
+    "shuffle": true,
+    "stem": true,
+    "lower": true,
+    "strip_stopwords": true,
+    "strip_links": true,
+    "strip_emojis": false,
+    "strip_punctuations": true,
+    "expand_shortcuts": true,
+    "subset": null,
+    "min_freq": 1,
+    "max_freq": 1.0,
+    "analyzer": "char",
+    "ngram_max_range": 5,
+    "alpha": 1e-4,
+    "learning_rate": 1e-1,
+    "power_t": 0.1,
+    "num_epochs": 100
+}
