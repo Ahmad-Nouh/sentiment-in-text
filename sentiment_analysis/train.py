@@ -1,3 +1,6 @@
+import json
+import mlflow
+import optuna
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -50,6 +53,15 @@ def train(args, df, trial=None):
                 f"train_loss: {train_loss:.5f}, "
                 f"val_loss: {val_loss:.5f}"
             )
+        # Log
+        if not trial:
+            mlflow.log_metrics({"train_loss": train_loss, "val_loss": val_loss}, step=epoch)
+
+        # Pruning (for optimization in next section)
+        if trial:  # pragma: no cover, optuna pruning
+            trial.report(val_loss, epoch)
+            if trial.should_prune():
+                raise optuna.TrialPruned()
 
     # Threshold
     y_pred = model.predict(X_val)
@@ -72,3 +84,23 @@ def train(args, df, trial=None):
         "model": model,
         "performance": performance,
     }
+
+
+def objective(args, df, trial):
+    """Objective function for optimization trials."""
+    # Parameters to tune
+    args.analyzer = trial.suggest_categorical("analyzer", ["word", "char", "char_wb"])
+    args.ngram_max_range = trial.suggest_int("ngram_max_range", 3, 10)
+    args.learning_rate = trial.suggest_loguniform("learning_rate", 1e-2, 1e-1)
+
+    # Train & evaluate
+    artifacts = train(args=args, df=df, trial=trial)
+
+    # Set additional attributes
+    overall_performance = artifacts["performance"]["overall"]
+    print(json.dumps(overall_performance, indent=2))
+    trial.set_user_attr("precision", overall_performance["precision"])
+    trial.set_user_attr("recall", overall_performance["recall"])
+    trial.set_user_attr("f1", overall_performance["f1"])
+
+    return overall_performance["f1"]
