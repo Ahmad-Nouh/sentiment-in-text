@@ -86,12 +86,20 @@ def train(args, df, trial=None):
     }
 
 
-def objective(args, df, trial):
+def objective(args, df, trial: optuna.Trial):
     """Objective function for optimization trials."""
     # Parameters to tune
     args.analyzer = trial.suggest_categorical("analyzer", ["word", "char", "char_wb"])
     args.ngram_max_range = trial.suggest_int("ngram_max_range", 3, 10)
-    args.learning_rate = trial.suggest_loguniform("learning_rate", 1e-2, 1e-1)
+    args.learning_rate = trial.suggest_loguniform("learning_rate", 1e-2, 1e0)
+    args.power_t = trial.suggest_uniform("power_t", 0.1, 0.5)
+    args.min_freq = trial.suggest_int("min_freq", 1, 5)
+    args.max_freq = trial.suggest_float("max_freq", 0.98, 1.0, step=0.1)
+    args.stem = trial.suggest_categorical("stem", [False, True])
+    args.strip_stopwords = trial.suggest_categorical("strip_stopwords", [False, True])
+    args.strip_emojis = trial.suggest_categorical("strip_emojis", [False, True])
+    args.expand_shortcuts = trial.suggest_categorical("expand_shortcuts", [False, True])
+    args.strip_punctuations = trial.suggest_categorical("strip_punctuations", [False, True])
 
     # Train & evaluate
     artifacts = train(args=args, df=df, trial=trial)

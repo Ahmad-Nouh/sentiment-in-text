@@ -60,14 +60,15 @@ def train_model(args_fp: str = "config/args.json",
         open(Path(config.CONFIG_DIR, "run_id.txt"), "w").write(run_id)
         utils.save_dict(performance, Path(config.CONFIG_DIR, "performance.json"))
 
-def optimize(args, study_name, num_trials):
+def optimize(args_fp, study_name, num_trials):
     """Optimize hyperparameters."""
     # Load labeled data
     df = pd.read_csv(Path(config.RAW_DATA_DIR, "text_emotion.csv"))
 
+    args = Namespace(**utils.load_dict(filepath=args_fp))
     # Optimize
     pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=5)
-    study = optuna.create_study(study_name="optimization", direction="maximize", pruner=pruner)
+    study = optuna.create_study(study_name=study_name, direction="maximize", pruner=pruner)
     mlflow_callback = MLflowCallback(
         tracking_uri=mlflow.get_tracking_uri(), metric_name="f1")
     study.optimize(
@@ -115,4 +116,5 @@ def predict_sentiment(text, run_id=None):
 
 if __name__ == "__main__":
     args_fp = os.path.join(config.CONFIG_DIR, "args.json")
-    train_model(args_fp, experiment_name="baselines", run_name="sgd")
+    optimize(args_fp, "SGD", 2)
+    # train_model(args_fp, experiment_name="baselines", run_name="sgd")
